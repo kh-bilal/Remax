@@ -1,9 +1,11 @@
-from datetime import datetime
-#from mod_sql import inserer_data
-import pandas as pd
 import requests
-import csv
 from bs4 import BeautifulSoup
+from time import sleep
+from random import randint
+import numpy as np
+import pandas as pd
+from datetime import datetime
+import csv
 
 #To Display all columns of a pandas DataFrame (remax_data)
 pd.set_option('display.max_rows', 500)
@@ -12,7 +14,6 @@ pd.set_option('display.width', 1000)
 
 HEADERS = {'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_6) '
                          'AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36'}
-url = "https://www.remax-quebec.com/fr/recherche/residentielle/resultats.rmx#listing"
 proxies = {
     "http": 'http://110.74.222.159:40348',
     "https": 'http://181.118.167.104:80'
@@ -20,10 +21,14 @@ proxies = {
 
 def main():
     print_header()
-    html = get_html_from_url(url, HEADERS, proxies)
-    remax_data = get_data_from_html(html)
-    add_data_to_file(remax_data)
-    print(remax_data)
+    pages = np.arange(0, 300, 10)
+    for page in pages:
+        url = "https://www.remax-quebec.com/fr/recherche/residentielle/resultats.rmx?offset=" + str(page) + "#listing"
+        html = get_html_from_url(url, HEADERS, proxies)
+        remax_data = get_data_from_html(html)
+        add_data_to_file(remax_data)
+        print(remax_data)
+        sleep(randint(2, 10))
 
 def print_header():
     print('---------------------------------')
@@ -56,7 +61,7 @@ def get_data_from_html(html):
         mots_2 = mots[0].split(" ")
         type.append(mots_2[1]+" "+mots_1[12]+" "+mots_1[13])
 
-    #Chercher bethroom bedroom
+    #Chercher bethroom et bedroom
     bethroom = list()
     bedroom = list()
     property_options = html.find_all("div", attrs={"class": "property-options"})
@@ -74,7 +79,7 @@ def get_data_from_html(html):
         mots = [x for x in mots if x != ''] #Remove empty strings from a list
         price.append(mots[0].replace('\xa0', ' ')+'$')
 
-    #Cherche adresse + Timestamp
+    #Chercher adresse + Timestamp
     adress = list()
     i = 0
     property_address_street = html.find_all("span",attrs={"class": "property-address-street"}) #property-address
@@ -93,7 +98,7 @@ def get_data_from_html(html):
     return df
 
 def add_data_to_file(report):
-    with open("sortie.txt", "a", newline="") as ficout:
+    with open("data.txt", "a", newline="") as ficout:
         ecriteur = csv.writer(ficout, delimiter="|", quoting=csv.QUOTE_NONNUMERIC)
         for i, row in report.iterrows():
             ecriteur.writerow((row["Timestamp"], row["ULS"], row["Type"], row["Adresse"], row["Bethroom"], row["Bedroom"], row["Price"]))
