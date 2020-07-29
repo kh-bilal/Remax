@@ -37,7 +37,7 @@ def print_header():
     print()
 
 def get_html_from_url(url, headers, proxies):
-    response = requests.get(url, headers=HEADERS, proxies=proxies).content
+    response = requests.get(url, headers=headers, proxies=proxies).content
     # Parse the html content
     soup = BeautifulSoup(response, "html.parser")
     return soup
