@@ -21,9 +21,9 @@ proxies = {
 
 def main():
     print_header()
-    pages = np.arange(0, 300, 10)
+    pages = np.arange(0, 500, 10)
     for page in pages:
-        url = "https://www.remax-quebec.com/fr/recherche/residentielle/resultats.rmx?offset=" + str(page) + "#listing"
+        url = "https://www.remax-quebec.com/fr/maison-a-vendre/montreal/resultats.rmx?offset=" + str(page) + "#listing"" + str(page) + "
         html = get_html_from_url(url, HEADERS, proxies)
         remax_data = get_data_from_html(html)
         add_data_to_file(remax_data)
@@ -67,10 +67,16 @@ def get_data_from_html(html):
     property_options = html.find_all("div", attrs={"class": "property-options"})
     for prop_opt in property_options:
         mots = prop_opt.get_text().split("\n")
-        bethroom.append(mots[1])
-        bedroom.append(mots[2])
+        if len(mots) < 2 or mots[1] == "":
+            bethroom.append(np.NAN)
+        else:
+            bethroom.append(mots[1])
+        if len(mots) < 3 or mots[2] == "":
+            bedroom.append(np.NAN)
+        else:
+            bedroom.append(mots[2])
 
-    #Chercher bethroom bedroom
+    #Chercher price
     price = list()
     property_price = html.find_all("div", attrs={"class": "property-price"})
     for prop_price in property_price:
@@ -98,7 +104,7 @@ def get_data_from_html(html):
     return df
 
 def add_data_to_file(report):
-    with open("data.txt", "a", newline="") as ficout:
+    with open("montreal_data.txt", "a", newline="") as ficout:
         ecriteur = csv.writer(ficout, delimiter="|", quoting=csv.QUOTE_NONNUMERIC)
         for i, row in report.iterrows():
             ecriteur.writerow((row["Timestamp"], row["ULS"], row["Type"], row["Adresse"], row["Bethroom"], row["Bedroom"], row["Price"]))
